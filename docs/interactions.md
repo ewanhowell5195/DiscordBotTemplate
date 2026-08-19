@@ -18,6 +18,8 @@ Resolves the state object. Push any extra messages you send to `state.messages` 
 
 Runs a modal flow. For a fresh slash command the modal opens directly. For prefix commands (or when already replied) it sends a prompt message with a button that opens the modal.
 
+`message` is the invoking message or interaction. `modalMessage` is an existing message to edit into the prompt, used to chain steps in multi modal flows, or `undefined` to send a new one.
+
 ```js
 const modal = await modalHandler(message, undefined, {
   prompt: {

@@ -30,7 +30,7 @@ registerPrefixCommand(scriptName, prefixPath, {
 - `autoClearCooldown` - by default a cooldown is cleared when the command finishes, so it only guards against overlapping runs. Set to `false` to make it persist for the full time
 - `typingless` - skip the typing indicator
 - `singleUse` - only one instance of the command can run per channel at a time
-- `options: { quotes: true }` - let users quote arguments containing spaces
+- `quotes` - let users quote arguments containing spaces
 - `links` - `[["Label", "url"]]` pairs shown as buttons on the command's help page
 - `requirement` - `{ check(message), error }` for custom gating. `error` can be a string or a function
 
