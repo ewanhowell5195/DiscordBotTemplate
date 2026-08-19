@@ -47,7 +47,7 @@ registerFunction(scriptName, async (message, command) => {
     await sendError(message, {
       title: "An error occured while processing that command:",
       description: `\`\`\`${error.message}\`\`\``,
-      footer: ["This error has been logged."]
+      footer: "This error has been logged."
     })
     let title
     if (message.guild) title = `Permission error in \`${message.guild.name}\` \`#${message.channel.name}\``
@@ -60,7 +60,7 @@ registerFunction(scriptName, async (message, command) => {
         ["Error message", `\`${limit(error.message, 1000)}\``, false],
         ["Stack", `\`\`\`${limit(error.stack.toString(), 1000)}\`\`\``, false]
       ],
-      footer: [`ChannelID: ${message.channelId} - UserID: ${message.author.id}`]
+      footer: `ChannelID: ${message.channelId} - UserID: ${message.author.id}`
     })
   }
   return true

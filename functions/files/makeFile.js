@@ -1,3 +1,4 @@
+// builds an attachment from { name } plus one of buffer, path, url, or text
 registerFunction(scriptName, async data => {
   if (data.file) return data.file
   let buffer

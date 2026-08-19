@@ -1,3 +1,5 @@
+// shared entry checks for all three runners, returns true when the command is allowed to run
+// message.command becomes a snapshot of the command for everything downstream
 registerFunction(scriptName, async (message, command) => {
   if (!message.author) message.author = message.user
   const name = command.command ?? command.name

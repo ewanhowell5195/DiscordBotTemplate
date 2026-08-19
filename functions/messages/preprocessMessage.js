@@ -1,11 +1,6 @@
+// normalises message data before sending: bare components get wrapped into rows, and file
+// definitions run through makeFile
 registerFunction(scriptName, async (message, args) => {
-  if (args.embeds) {
-    for (let i = 0; i < args.embeds.length; i++) {
-      if (!(args.embeds[i] instanceof Discord.EmbedBuilder || args.embeds[i] instanceof Discord.Embed)) {
-        args.embeds[i] = makeEmbed(message, args.embeds[i])
-      }
-    }
-  }
   if (args.components) {
     if (!Array.isArray(args.components)) {
       args.components = [args.components]

@@ -1,3 +1,14 @@
+// runs a modal flow and resolves a state object with { fields, timeout, interaction?, message? }
+// - prompt: message data for a message with a button (id "modal") that opens the modal. when the
+//   command is a fresh slash command the prompt is skipped and the modal opens directly, with the
+//   submit interaction available as state.interaction for the caller to reply to
+// - modal: { title, rows } in the makeModal format
+// - onSubmit(fields, interaction, { state, skipped }): return true to finish, or falsy to keep
+//   the collector running for multi step flows
+// - onTimeout(state): overrides the default timeout message
+// - onInteraction(interaction, { state, fields, onSubmit }): receives any other button presses
+// invalid submissions edit the prompt into an error summary with re-enter/skip buttons, and the
+// reopened modal only contains the fields that failed
 registerFunction(scriptName, async (message, modalMessage, { prompt, modal, onSubmit, onTimeout, onInteraction, authorOnly = true, timeout = 300, errorButtons, defer = true }) => {
   let state = {}
   const fields = {}
@@ -29,6 +40,7 @@ registerFunction(scriptName, async (message, modalMessage, { prompt, modal, onSu
     component.row(...makeErrorButtons(required))
   ]
   if (prompt) {
+    // fresh slash command, open the modal directly instead of sending the prompt
     if (!modalMessage && message instanceof Discord.BaseInteraction && typeof message.showModal === "function" && !message.replied && !message.deferred) {
       modal.id ??= Math.random().toString()
       const author = message.author ?? message.user
@@ -53,10 +65,10 @@ registerFunction(scriptName, async (message, modalMessage, { prompt, modal, onSu
         return state
       }
       modal = modal2
-      await sendComponents(submit, makeErrorComponents(errors, required))
+      await sendMessage(submit, makeErrorComponents(errors, required))
       modalMessage = submit.message
     } else {
-      modalMessage = await sendComponents(message, prompt, modalMessage)
+      modalMessage = await sendMessage(message, prompt, modalMessage)
     }
   }
   state = await interactionHandler(modalMessage, async (interaction, collector, s) => {
@@ -66,7 +78,7 @@ registerFunction(scriptName, async (message, modalMessage, { prompt, modal, onSu
       const [modal2, errors, required] = await parseModalFields(interaction, modal, fields)
       if (errors.length) {
         modal = modal2
-        state.message = await sendComponents(message, makeErrorComponents(errors, required), state.message)
+        state.message = await sendMessage(message, makeErrorComponents(errors, required), state.message)
         return
       }
       if (!onSubmit || await onSubmit(fields, interaction, { state })) {

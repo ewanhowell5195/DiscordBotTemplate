@@ -13,7 +13,7 @@ registerPrefixCommand(scriptName, prefixPath, {
     const player = parseInt(choice[0])
     const bot = randInt(2)
     const result = player === bot ? "It's a draw!" : (player + 1) % 3 === bot ? "I win!" : "You win!"
-    sendComponents(message, {
+    sendMessage(message, {
       title: result,
       description: `You picked **${options[player]}**, and I picked **${options[bot]}**`
     }, choice[1])

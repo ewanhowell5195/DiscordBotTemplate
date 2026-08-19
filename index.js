@@ -14,6 +14,7 @@ const config = JSON.parse(fs.readFileSync("./config.json"))
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+// everything in scope is available as a global inside every loaded script
 const scope = {
   escapeStringRegexp,
   stringSimilarity,
@@ -167,6 +168,8 @@ const vmContext = vm.createContext(vmContextObject)
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+// scripts run inside a vm context that shares the globals above, so files never need imports
+// scriptName is the file name, prefixPath/slashPath are the path relative to the commands folders
 const sourceCache = new Map()
 
 async function loadScript(filePath) {
@@ -187,6 +190,7 @@ async function loadScript(filePath) {
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+// the reloading flag stops events firing against half-loaded state, dropped events are correct here
 async function reloadAll() {
   vmContextObject.reloading = true
   try {
@@ -196,6 +200,7 @@ async function reloadAll() {
   }
 }
 
+// all sources are read up front so a mid-reload file save cannot produce a half old, half new bot
 async function loadAll() {
   sourceCache.clear()
   for (const dir of ["./functions", "./loadins", "./argtypes", "./commands", "./autocompletes", "./events"]) {
@@ -261,6 +266,7 @@ async function loadAll() {
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+// unhandled errors get reported to the configured error channel, or the console in dev mode
 const handleError = async error => {
   if (!error || typeof error !== "object") error = new Error(String(error))
   if (testMode) {

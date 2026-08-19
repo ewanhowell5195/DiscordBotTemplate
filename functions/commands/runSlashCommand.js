@@ -1,3 +1,4 @@
+// option types discord resolves natively, they skip the argtype getter and only run validate
 const preHandled = ["number", "integer", "boolean", "channel", "role", "attachment"]
 
 registerFunction(scriptName, async interaction => {
@@ -24,6 +25,7 @@ registerFunction(scriptName, async interaction => {
   if (await preCommand(interaction, command) !== true) return
   interaction.commandRun = `/${command.tree.join(" ")}`
   const args = []
+  // option values are read by argument id and passed through the same argtypes as prefix commands
   if (command.arguments) {
     for (const [i, argument] of command.arguments.entries()) {
       const name = argument.id

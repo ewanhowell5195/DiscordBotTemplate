@@ -11,7 +11,7 @@ registerFunction(scriptName, async (message, data) => {
     processing: data.processing
   })
   return sendMessage(message, {
-    embedless: true,
+    content: "",
     files: [file],
     processing: data.processing
   })

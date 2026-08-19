@@ -1,4 +1,5 @@
 registerFunction(scriptName, {
+  // cooldownType guild shares the cooldown across the server, user tracks it per person
   cooldownCheck(message, command) {
     const id = command.cooldownType === "guild" ? message.guildId ?? message.channelId : message.author?.id
     const now = Date.now()

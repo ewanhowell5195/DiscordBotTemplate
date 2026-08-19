@@ -6,6 +6,7 @@ registerPrefixCommand(scriptName, prefixPath, {
     name: "categoryOrCommand",
     description: "The category or command",
     categories: true,
+    restricted: true,
     autocomplete: (interaction, text) => {
       const commands = Array.from(client.prefixCommands).filter(e => e[0] === e[1].name && !e[1].parents.includes("restricted"))
       if (text) return interaction.respond(filteredSort(commands.map(e => [e[0], e[1].aliases]).flat().flat().filter(Boolean), text, 25).map(e => ({ name: e, value: e })))
@@ -14,7 +15,7 @@ registerPrefixCommand(scriptName, prefixPath, {
   }],
   async execute(message, command, interaction) {
     if (!command) {
-      return sendComponents(message, {
+      return sendMessage(message, {
         title: client.user.displayName,
         description: `Use ${await getCommandName(message, "help", "[category]")} to view the commands in a category\n\n- ${Object.keys(client.commandTree).sort().map(e => e.toTitleCase()).join("\n- ")}`,
         thumbnail: await avatar(client.user)
@@ -23,13 +24,13 @@ registerPrefixCommand(scriptName, prefixPath, {
     if (command.categories) {
       if ((command.name === "restricted" || command.parents.includes("restricted")) && !(config.owners.includes(message.author.id) || isMod(message.member))) {
         return sendError(message, {
-          author: ["Category restricted", client.icons.help],
+          title: "Category restricted",
           description: "Only moderators can see that category"
         })
       }
       const tree = command.parents.concat([command.name])
       const subcategories = Object.keys(command.categories).filter(e => e !== "restricted")
-      return sendComponents(interaction ?? message, {
+      return sendMessage(interaction ?? message, {
         components: component.container(message, [
           `## ${tree.join(" > ").toTitleCase()}`,
           `Use ${await getCommandName(message, "help", "[command]")} to view more information about a command`,
@@ -42,7 +43,7 @@ registerPrefixCommand(scriptName, prefixPath, {
     }
     if (command.parents.includes("restricted") && !(config.owners.includes(message.author.id) || isMod(message.member))) {
       return sendError(message, {
-        author: ["Command restricted", client.icons.help],
+        title: "Command restricted",
         description: "Only moderators can see that command"
       })
     }
@@ -81,7 +82,7 @@ registerPrefixCommand(scriptName, prefixPath, {
       })))
       return component.container(message, components)
     }
-    const help = await sendComponents(interaction ?? message, {
+    const help = await sendMessage(interaction ?? message, {
       components: await buildComponents(message.command?.slash && command.slashCommand ? "slash" : "prefix"),
       ephemeral: interaction
     })
@@ -89,13 +90,13 @@ registerPrefixCommand(scriptName, prefixPath, {
       if (interaction.customId === "slash" || interaction.customId === "prefix") {
         if (hasFlag.message(interaction.message, "Ephemeral")) {
           await interaction.deferUpdate()
-          return editPrivateComponents(interaction, await buildComponents(interaction.customId))
+          return editPrivateMessage(interaction, await buildComponents(interaction.customId))
         }
         if (interaction.user.id !== message.author.id) {
-          state.messages.push(await sendPrivateComponents(interaction, await buildComponents(interaction.customId)))
+          state.messages.push(await sendPrivateMessage(interaction, await buildComponents(interaction.customId)))
           return
         }
-        await editComponents(help, {
+        await editMessage(help, {
           components: await buildComponents(interaction.customId)
         })
         interaction.deferUpdate()

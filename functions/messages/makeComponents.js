@@ -1,6 +1,9 @@
-async function setup(message, args) {
-  if (Array.isArray(args)) {
-    args = { components: [component.container(message, args)] }
+// normalises message args into components v2. args can be a string, an array of container
+// contents, a builder, or an object with either top level components or the embed style
+// shorthand: { title, url, description, fields, image, thumbnail, footer, button, colour }
+registerFunction(scriptName, (message, args) => {
+  if (typeof args === "string" || Array.isArray(args)) {
+    args = { components: [component.container(message, [].concat(args))] }
   } else if (Object.getPrototypeOf(args) !== Object.prototype) {
     if (args instanceof Discord.ContainerBuilder) {
       args = { components: [args] }
@@ -8,9 +11,6 @@ async function setup(message, args) {
       args = { components: [component.container(message, [args])] }
     }
   }
-  args.embedless = true
-  args.flags = getFlag.message("IsComponentsV2")
-  args.allowedMentions = {}
   if (!args.components) {
     const components = []
     const parts = []
@@ -51,26 +51,6 @@ async function setup(message, args) {
       components
     })]
   }
+  args.flags = getFlag.message("IsComponentsV2")
   return args
-}
-
-registerFunction(scriptName, {
-  async sendComponents(message, args, processing) {
-    args = await setup(message, args)
-    args.processing ??= processing
-    return sendMessage(message, args)
-  },
-  async sendPrivateComponents(message, args, processing) {
-    args = await setup(message, args)
-    args.processing ??= processing
-    return sendPrivateMessage(message, args)
-  },
-  async editComponents(message, args) {
-    args = await setup(message, args)
-    return editMessage(message, args)
-  },
-  async editPrivateComponents(message, args) {
-    args = await setup(message, args)
-    return editPrivateMessage(message, args)
-  }
 })

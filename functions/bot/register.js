@@ -1,6 +1,8 @@
 const aliases = new Set
 
 registerFunction(scriptName, {
+  // an argtype can be a plain function (the getter) or an object with get/validate/missing/render/autocomplete
+  // calling argTypes[name](item, data, args) runs get then validate, and returns undefined for invalid input
   registerArgType(name, argType) {
     let displayName
     if (typeof argType !== "function") {
@@ -56,6 +58,7 @@ registerFunction(scriptName, {
     argTypes[name].displayName = displayName
     argTypes[name].description = argType.description
   },
+  // builds the command tree from the folder structure, category.json files provide category descriptions
   registerPrefixCommand(name, categories, command) {
     for (const category of categories) client.prefixCategories.add(category)
     command.type = "prefix"
@@ -99,6 +102,7 @@ registerFunction(scriptName, {
           if (argument.disallowedCharacters.includes("\s")) argument.disallowedCharacters = argument.disallowedCharacters.replace("\s", "") + " space"
         }
       }
+      // the last argument swallows the rest of the message unless a type that cannot span words, set rest yourself to override
       if (!command.arguments.find(e => defined(e.rest))) {
         const arg = command.arguments[command.arguments.length - 1]
         if (!["integer", "number", "boolean", "url"].includes(arg.type)) {
@@ -133,6 +137,8 @@ registerFunction(scriptName, {
       client.stats.prefixCommandCount++
     }
   },
+  // slash commands inherit arguments, description, permissions, cooldowns, and execute from the prefix
+  // command of the same name (or the one named by command:), so most slash files can be empty
   registerSlashCommand(name, categories, command) {
     let collection = client.slashCommands
     for (const c of categories) {
@@ -186,6 +192,7 @@ registerFunction(scriptName, {
     collection.set(name, command)
     client.stats.slashCommandCount++
   },
+  // context menu commands also inherit from their prefix command, contextType picks User or Message
   registerContextCommand(name, command) {
     command.type = "context"
     command.context = true

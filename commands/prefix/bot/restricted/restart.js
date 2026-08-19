@@ -3,7 +3,8 @@ registerPrefixCommand(scriptName, prefixPath, {
   permissions: ["BotOwner"],
   async execute(message, args) {
     const msg = await sendMessage(message, {
-      author: ["Restarting bot...", client.icons.pinging]
+      title: "Restarting bot...",
+      thumbnail: client.icons.pinging
     })
     client.destroy()
     fs.writeFileSync(`./restart.json`, JSON.stringify([msg.channelId, msg.id]), "utf8")

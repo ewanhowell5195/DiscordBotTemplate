@@ -5,7 +5,7 @@ registerEvent(scriptName, async () => {
     const data = JSON.parse(fs.readFileSync("./restart.json", "utf8"))
     const channel = await getChannel(data[0])
     if (channel) await sendMessage(channel, {
-      author: ["Restarted successfully"],
+      title: "Restarted successfully",
       processing: await getMessage(channel, data[1])
     })
     fs.unlinkSync("./restart.json")

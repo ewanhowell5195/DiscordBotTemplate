@@ -8,6 +8,7 @@ registerFunction(scriptName, async interaction => {
   if (await preCommand(interaction, command) !== true) return
   interaction.commandRun = interaction.commandName
   let args = []
+  // context commands with arguments collect them through a modal, since context menus have no options
   if (command.arguments) {
     const modal = {
       title: command.name,
@@ -44,6 +45,7 @@ registerFunction(scriptName, async interaction => {
       messageId: interaction.targetId,
       guildId: interaction.guildId
     }
+  // user context commands get the target member prepended to the arguments
   } else if (isType.command(interaction, "User")) {
     let member
     if (interaction.guild) {

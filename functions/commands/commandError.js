@@ -5,7 +5,7 @@ registerFunction(scriptName, async (message, error) => {
   await sendError(message, {
     title: "An error occured while processing that command:",
     description: `\`\`\`${error.message}\`\`\``,
-    footer: ["This error has been logged."]
+    footer: "This error has been logged."
   }).catch(() => {})
   try {
     let title
@@ -20,7 +20,7 @@ registerFunction(scriptName, async (message, error) => {
           ["Error message", `\`\`${limit(error.message, 1000)}\`\``, false],
           ["Stack", `\`\`\`${limit(error.stack.toString(), 1000)}\`\`\``, false]
         ],
-        footer: [`ChannelID: ${message.channelId}\nMessage ID: ${message.id}\nUserID: ${message.author.id}`]
+        footer: `ChannelID: ${message.channelId}\nMessage ID: ${message.id}\nUserID: ${message.author.id}`
       })
     } else {
       if (message.member) title = `Application command command error in \`${message.guild.name}\` \`#${message.channel.name}\``
@@ -33,7 +33,7 @@ registerFunction(scriptName, async (message, error) => {
           ["Error message", `\`${limit(error.message, 1000)}\``, false],
           ["Stack", `\`\`\`${limit(error.stack.toString(), 1000)}\`\`\``, false]
         ],
-        footer: [`ChannelID: ${message.channelId} - UserID: ${message.user.id}`]
+        footer: `ChannelID: ${message.channelId} - UserID: ${message.user.id}`
       })
     }
   } catch (e) {

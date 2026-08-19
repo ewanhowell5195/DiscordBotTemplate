@@ -12,7 +12,7 @@ registerPrefixCommand(scriptName, prefixPath, {
       title: "No note found",
       description: `${member.id === message.author.id ? "You do" : `${member} does`} not have a note set\n\nUse ${await getCommandName(message, "setnote")} to set one`
     })
-    sendComponents(message, {
+    sendMessage(message, {
       title: `${member.displayName}'s note`,
       description: note.note
     })

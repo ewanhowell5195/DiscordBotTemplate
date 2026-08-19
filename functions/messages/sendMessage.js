@@ -1,3 +1,6 @@
+// tries the interaction reply first, then editing the processing message, then replying, then a
+// plain channel send. interactions return the interaction itself with .message set, everything
+// else returns the sent message
 async function send(message, channel, processing, content) {
   await preprocessMessage(message, content)
   if (processing instanceof Discord.BaseInteraction) processing = processing.message
@@ -17,14 +20,14 @@ async function send(message, channel, processing, content) {
     } catch (err) {
       try {
         if (isType.error(err, "MessageWasBlockedByAutomaticModeration")) {
-          const embed = makeEmbed(message, {
-            title: "Response blocked by AutoMod",
-            description: "The response was blocked by AutoMod and could not be sent"
-          })
+          const blocked = {
+            components: [component.container(message, ["## Response blocked by AutoMod\nThe response was blocked by AutoMod and could not be sent"])],
+            flags: getFlag.message("IsComponentsV2")
+          }
           if (interaction.replied || interaction.deferred) {
-            sent = await interaction.editReply({ embeds: [embed] })
+            sent = await interaction.editReply(blocked)
           } else {
-            sent = await interaction.reply({ embeds: [embed] })
+            sent = await interaction.reply(blocked)
           }
           interaction.message = sent
           return interaction
@@ -58,7 +61,7 @@ async function send(message, channel, processing, content) {
 }
 
 registerFunction(scriptName, {
-  async sendMessage(message, args) {
+  async sendMessage(message, args, processing) {
     if (!message) return
     const origin = new Error().stack
     try {
@@ -70,43 +73,29 @@ registerFunction(scriptName, {
         })
         return
       }
+      // components v2 messages cannot have content, so content-only sends stay plain
+      if (args.content !== undefined) {
+        return await send(message, channel, args.processing ?? processing, {
+          allowedMentions: args.allowedMentions ?? (args.ping ? { repliedUser: true, parse: ["users", "roles"] } : { parse: ["users"] }),
+          content: args.content,
+          files: args.files,
+          components: args.components,
+          ephemeral: args.ephemeral
+        })
+      }
+      args = makeComponents(message, args)
+      // deletable adds a bin button that lets the author (or a mod) delete the response
       if (args.deletable && !(message.command?.application && args.ephemeral)) {
-        args.components ??= []
-        if (!Array.isArray(args.components)) args.components = [args.components]
         args.components.push(component.row(component.button({
           emoji: client.emotes.binWhite,
           style: "red",
           id: `delete_${message.author.id}`
         })))
       }
-      if (args.content || args.embedless) {
-        return await send(message, channel, args.processing, {
-          allowedMentions: args.allowedMentions ?? (args.ping ? { repliedUser: true, parse: ["users", "roles"] } : { parse: ["users"] }),
-          content: args.content,
-          files: args.files,
-          components: args.components,
-          embeds: [],
-          ephemeral: args.ephemeral,
-          flags: args.flags
-        })
-      }
-      if (args.embeds) {
-        return await send(message, channel, args.processing, {
-          allowedMentions: args.allowedMentions ?? (args.ping ? { repliedUser: true, parse: ["users", "roles"] } : { parse: ["users"] }),
-          content: args.message,
-          embeds: args.embeds,
-          files: args.files,
-          components: args.components,
-          ephemeral: args.ephemeral,
-          flags: args.flags
-        })
-      }
-      return await send(message, channel, args.processing, {
-        allowedMentions: args.allowedMentions ?? (args.ping ? { repliedUser: true, parse: ["users", "roles"] } : { parse: ["users"] }),
-        content: args.message,
-        embeds: [args],
-        files: args.files,
+      return await send(message, channel, args.processing ?? processing, {
+        allowedMentions: args.allowedMentions ?? (args.ping ? { repliedUser: true, parse: ["users", "roles"] } : {}),
         components: args.components,
+        files: args.files,
         ephemeral: args.ephemeral,
         flags: args.flags
       })
@@ -115,40 +104,29 @@ registerFunction(scriptName, {
       throw err
     }
   },
-  async sendPrivateMessage(interaction, args) {
+  async sendPrivateMessage(interaction, args, processing) {
     const origin = new Error().stack
     try {
-      await preprocessMessage(interaction, args)
-      let sent
-      if (args.embedless || args.content) {
-        sent = await interaction.reply({
+      if (args.content !== undefined) {
+        const sent = await interaction.reply({
           content: args.content,
-          embeds: [],
           components: args.components,
           files: args.files,
-          flags: args.flags,
           ephemeral: true,
           fetchReply: true
         })
-      } else if (args.embeds) {
-        sent = await interaction.reply({
-          embeds: args.embeds,
-          components: args.components,
-          files: args.files,
-          flags: args.flags,
-          ephemeral: true,
-          fetchReply: true
-        })
-      } else {
-        sent = await interaction.reply({
-          embeds: [makeEmbed(interaction, args)],
-          components: args.components,
-          files: args.files,
-          flags: args.flags,
-          ephemeral: true,
-          fetchReply: true
-        })
+        interaction.message = sent
+        return interaction
       }
+      args = makeComponents(interaction, args)
+      await preprocessMessage(interaction, args)
+      const sent = await interaction.reply({
+        components: args.components,
+        files: args.files,
+        flags: args.flags,
+        ephemeral: true,
+        fetchReply: true
+      })
       interaction.message = sent
       return interaction
     } catch (err) {

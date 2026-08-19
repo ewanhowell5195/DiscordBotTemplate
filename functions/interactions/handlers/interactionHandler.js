@@ -1,3 +1,12 @@
+// collects component and modal interactions on a message and resolves a state object once the
+// collector stops. func(interaction, collector, state) handles each interaction, and setting
+// state.timeout = false before stopping marks the interaction as used
+// - timeout: seconds of inactivity before stopping (fixed: true stops resetting the timer)
+// - author: reject other users with an ephemeral notice
+// - delete: delete the message on timeout
+// - timeoutMessage: message data to edit in on timeout
+// - disable: false skips the default disabling of components on timeout. extra messages pushed to
+//   state.messages get their components disabled too
 registerFunction(scriptName, async (message, func, args = {}) => {
   let filterMessage = message
   const interaction = message.interaction ?? message
@@ -23,7 +32,7 @@ registerFunction(scriptName, async (message, func, args = {}) => {
 
     collector.on("collect", async interaction => {
       if (args.author && interaction.user.id !== args.author.id) {
-        return sendPrivateComponents(interaction, "Only the command author can do that")
+        return sendPrivateMessage(interaction, "Only the command author can do that")
       }
 
       if (!args.fixed) {
@@ -40,18 +49,18 @@ registerFunction(scriptName, async (message, func, args = {}) => {
         if (args.delete) {
           deleteMessage(message)
         } else if (args.timeoutMessage) {
-          editComponents(state.message, args.timeoutMessage)
+          editMessage(state.message, args.timeoutMessage)
         } else if (args.disable !== false) {
           const components = state.message.components
           if (components && disableComponents(components)) {
-            editComponents(state.message, { components })
+            editMessage(state.message, { components })
           }
         }
         if (args.disable !== false) {
           for (const m of state.messages) {
             const components = m.components ?? m.message.components
             if (components && disableComponents(components)) {
-              editComponents(m, { components })
+              editMessage(m, { components })
             }
           }
         }

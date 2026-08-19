@@ -10,6 +10,6 @@ registerPrefixCommand(scriptName, prefixPath, {
   }],
   execute(message, sides) {
     sides = Math.max(2, Math.floor(sides))
-    return sendComponents(message, `🎲 You rolled a **${randInt(sides - 1) + 1}** on a D${sides}`)
+    return sendMessage(message, `🎲 You rolled a **${randInt(sides - 1) + 1}** on a D${sides}`)
   }
 })

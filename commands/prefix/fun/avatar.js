@@ -8,7 +8,7 @@ registerPrefixCommand(scriptName, prefixPath, {
   }],
   execute(message, member) {
     member ??= message.member
-    return sendComponents(message, {
+    return sendMessage(message, {
       title: `${member.displayName}'s avatar`,
       image: avatar(member, 4096)
     })

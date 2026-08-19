@@ -43,13 +43,12 @@ registerPrefixCommand(scriptName, prefixPath, {
       const check = await confirm(target, {
         description: "You already have a note\n\nAre you sure you want to replace it?",
         danger: true,
-        cv2: true,
         processing: modalMessage
       })
-      if (!check[0]) return editComponents(check[1], "The note update has been aborted")
+      if (!check[0]) return editMessage(check[1], "The note update has been aborted")
       modalMessage = check[1]
     }
     db.notes.set(message.author.id, modal.fields.note, modal.fields.private ? 1 : 0)
-    sendComponents(message, `Your note has been ${existing ? "updated" : "set"}`, modalMessage)
+    sendMessage(message, `Your note has been ${existing ? "updated" : "set"}`, modalMessage)
   }
 })

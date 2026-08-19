@@ -1,3 +1,5 @@
+// suggests the closest matching command and offers to run it, resolves [command, name, errorMessage]
+// when accepted and rejects otherwise
 registerFunction(scriptName, (command, message, data) => new Promise(async (fulfil, reject) => {
   const commandList = [...client.fullCommandList]
   let customCommands
@@ -26,7 +28,6 @@ registerFunction(scriptName, (command, message, data) => new Promise(async (fulf
       })
     )],
     ephemeral: false,
-    fetch: true,
     deletable: false
   })
   const author = message.author || message.user
