@@ -1,3 +1,4 @@
+// resolves members from mentions, ids, usernames, and shortcuts like me, bot, and ^ (previous message author)
 registerArgType(scriptName, {
   async get(item, data) {
     if (item instanceof Discord.GuildMember) {

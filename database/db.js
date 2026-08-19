@@ -1,3 +1,4 @@
+// prepared statement helper and the database modules. see docs/database.md
 globalThis.prepareDBAction = (action, run = "run", input = null, output = null) => {
   const prep = database.prepare(action)
   if (output) return (...args) => {

@@ -1,3 +1,5 @@
+// reacts with a unicode emoji or emoji id. slash commands get the emoji as a reply instead, since
+// there is no message to react to
 registerFunction(scriptName, {
   react(message, emoji) {
     if (message.command?.type === "slash") return sendMessage(message, {

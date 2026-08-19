@@ -1,3 +1,4 @@
+// safe fetch helpers that return undefined instead of throwing on missing or invalid ids
 async function get(thing, id) {
   if (!id || id.length > 19) return
   const got = await thing?.fetch(id).catch(() => {})

@@ -1,3 +1,4 @@
+// turns raw mention markup into readable text, eg <@id> into @name and timestamps into dates
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 const map = {

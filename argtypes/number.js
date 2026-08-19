@@ -1,3 +1,4 @@
+// parses numbers, including maths constants like pi. min/max on the argument bound the value
 const numRegex = /^-?\d*\.?\d+(?:e[+-]?\d+)?$/
 
 registerArgType(scriptName, {

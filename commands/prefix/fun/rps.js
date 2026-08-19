@@ -1,3 +1,4 @@
+// demonstrates the choose prompt
 const options = ["Rock", "Paper", "Scissors"]
 
 registerPrefixCommand(scriptName, prefixPath, {

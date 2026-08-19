@@ -1,3 +1,4 @@
+// demonstrates a number argument with an autocomplete from the autocompletes folder
 registerPrefixCommand(scriptName, prefixPath, {
   description: "Roll a dice.",
   aliases: ["dice"],

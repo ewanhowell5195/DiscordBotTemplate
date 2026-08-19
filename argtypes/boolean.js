@@ -1,3 +1,4 @@
+// accepts yes/no, true/false, on/off, 1/0, and friends
 registerArgType(scriptName, {
   get(item) {
     if (item === true || item === false) return item

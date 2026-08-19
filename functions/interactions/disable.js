@@ -1,3 +1,5 @@
+// disables buttons and selects in place, recursing into containers and sections. returns whether
+// anything changed
 registerFunction(scriptName, {
   disableComponent(component, disable = true) {
     switch (true) {

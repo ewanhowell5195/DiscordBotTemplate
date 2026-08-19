@@ -1,3 +1,4 @@
+// builds a modal from { title, rows }, where rows are strings or { label, description, component }
 registerFunction(scriptName, {
   makeModal(args) {
     const modal = new Discord.ModalBuilder({

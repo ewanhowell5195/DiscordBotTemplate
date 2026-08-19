@@ -1,43 +1,37 @@
 # DiscordBotTemplate
 
-A template for creating Discord bots with discord.js, supporting prefix commands, slash commands, context menu commands, autocompletes, modals, and hot reloading.
+A template for creating Discord bots with discord.js. Prefix, slash, and context menu commands share one definition, everything renders as components v2, and the whole bot hot reloads without restarting.
+
+- Prefix commands with typed, validated arguments that slash commands inherit automatically
+- Components v2 output everywhere, with an embed style shorthand for building containers
+- Modals with validation and error recovery, opening directly from slash commands
+- Interaction helpers: confirm and choose prompts, pagination, persistent buttons
+- Autocompletes, cooldowns, permissions, a help command that documents everything itself
+- A better-sqlite3 database with prepared statement helpers
+- `!reload` reloads every script in place
 
 ## Setup
 
-1. Install the dependencies:
-   ```
-   npm install
-   ```
-2. Create `private/tokens.json` with your bot token:
-   ```json
-   {
-     "discord": "YOUR_BOT_TOKEN"
-   }
-   ```
-3. Update `config.json` with your prefix, embed colour, owner user IDs, and an error log channel ID.
-4. Start the bot:
-   ```
-   node --no-warnings index.js -dev
-   ```
-   The `-dev` flag logs errors to the console instead of the error channel.
-5. Run `!deploy` in a server to register the application commands there, or `!deploy global` to register them globally.
+1. `npm install`
+2. Create `private/tokens.json` containing `{ "discord": "YOUR_BOT_TOKEN" }`
+3. Fill in `config.json` with your prefix, colour, owner IDs, and error channel
+4. `node --no-warnings index.js -dev`
+5. Run `!deploy` to register the application commands
 
-## Structure
+See [getting started](docs/getting-started.md) for the full setup.
 
-- `commands/prefix/` - prefix commands, organised into category folders
-- `commands/slash/` - slash commands. Most just contain `registerSlashCommand(scriptName, slashPath, {})` and inherit their arguments, description, and permissions from the prefix command of the same name. Folders create subcommands, with an optional `command.json` for the group details
-- `commands/context/` - context menu commands
-- `argtypes/` - argument types used by command arguments
-- `autocompletes/` - shared autocomplete handlers, referenced by name from command arguments
-- `events/` - Discord client events, named by event
-- `functions/` - globally available functions. Each file registers its exports with `registerFunction`, so they can be used anywhere without imports
-- `loadins/` - modules with load/unload lifecycles, such as prototypes and emotes
-- `database/` - a better-sqlite3 database with prepared statement helpers
+## Docs
 
-Files run through a vm wrapper with shared globals, so nothing needs importing. `!reload` reloads every script without restarting the bot.
+- [Getting started](docs/getting-started.md) - setup, config, owner commands, emojis
+- [Structure](docs/structure.md) - folders, the script loader, registering things, reloading
+- [Commands](docs/commands.md) - prefix commands, categories, cooldowns, permissions
+- [Arguments](docs/arguments.md) - argument definitions, argtypes, autocompletes
+- [Application commands](docs/application-commands.md) - slash commands, context menus, deploying
+- [Messages](docs/messages.md) - sending, editing, errors, files, the processing pattern
+- [Components](docs/components.md) - the component builders
+- [Interactions](docs/interactions.md) - modals, confirm, choose, pagination, buttons
+- [Database](docs/database.md) - tables and prepared statements
 
-## Commands
+## Demo commands
 
-Prefix commands define a `description`, `arguments`, `aliases`, `permissions`, and an `execute(message, ...args)` function. Arguments are validated by their `type` (an argtype), and the parsed values are passed to execute in order. The `help` command renders documentation for all of this automatically.
-
-Custom emojis are loaded from your application's uploaded emojis by name, with unicode fallbacks for the names the template uses. Upload emojis to your application in the Discord developer portal to replace them.
+The included commands each show off part of the template. `echo` has string arguments and a custom slash definition, `avatar` has a member argument and a context menu command, `roll` has a number argument with an autocomplete, `rps` uses choose, `textfile` uploads a file, and the `setnote`/`note`/`notes` trio covers modals, confirm, the database, and pagination. Delete them once you know your way around.

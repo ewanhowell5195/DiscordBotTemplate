@@ -1,3 +1,4 @@
+// demonstrates reading from the database
 registerPrefixCommand(scriptName, prefixPath, {
   description: "View a member's note.",
   arguments: [{

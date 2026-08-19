@@ -1,3 +1,4 @@
+// filters to entries containing the string, sorted with prefix matches first
 registerFunction(scriptName, (array, string, count) => {
   string = string.toLowerCase()
   array = array.filter(e => e.toLowerCase().includes(string)).sort((a, b) => {

@@ -1,3 +1,4 @@
+// the default argument type. see docs/arguments.md for the options every string argument supports
 registerArgType(scriptName, {
   async get(item, data, args) {
     if (args.lowerCase) item = item.toLowerCase()

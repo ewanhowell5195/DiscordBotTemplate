@@ -1,3 +1,4 @@
+// demonstrates file uploading
 registerPrefixCommand(scriptName, prefixPath, {
   description: "Turn a message into a text file.",
   arguments: [{

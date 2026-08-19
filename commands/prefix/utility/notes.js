@@ -1,3 +1,4 @@
+// demonstrates pagination
 registerPrefixCommand(scriptName, prefixPath, {
   description: "View all the public notes.",
   async execute(message) {

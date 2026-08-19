@@ -1,3 +1,4 @@
+// prepends https:// when missing. exists: true also checks the url responds
 const start = /^https?:\/\//
 
 registerArgType(scriptName, async (item, data, args) => {

@@ -1,3 +1,4 @@
+// sends a single file with friendly errors for save failures and the upload limit
 registerFunction(scriptName, async (message, data) => {
   const file = await makeFile(data)
   if (!file?.attachment?.length) return sendError(message, {

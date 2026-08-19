@@ -1,3 +1,4 @@
+// demonstrates the modal system (with a direct modal from the slash command), confirm, and the database
 registerPrefixCommand(scriptName, prefixPath, {
   description: "Set a note about yourself.",
   async execute(message) {

@@ -1,3 +1,4 @@
+// resolves a prefix command (or category with categories: true), suggesting the closest match when not found
 registerArgType(scriptName, {
   async get(item, data, args) {
     item = item.toLowerCase()

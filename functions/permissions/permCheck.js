@@ -1,3 +1,5 @@
+// the permission gate preCommand runs. prefix commands check discord permissions plus the BotOwner
+// and Moderator specials, application commands rely on the permissions set at deploy time
 registerFunction(scriptName, async (message, command) => {
   const author = message.author ?? message.user
   try {

@@ -1,3 +1,4 @@
+// name based lookups for the discord.js enums
 registerFunction(scriptName, {
   isType: {
     channel(channel, type) {

@@ -1,3 +1,4 @@
+// demonstrates the member argument type, and a context menu command in commands/context/avatar.js
 registerPrefixCommand(scriptName, prefixPath, {
   description: "View a member's avatar.",
   aliases: ["av", "pfp"],

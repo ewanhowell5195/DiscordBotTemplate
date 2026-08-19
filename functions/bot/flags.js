@@ -1,3 +1,4 @@
+// name based lookups for message flags
 registerFunction(scriptName, {
   hasFlag: {
     message: (item, flag) => item.flags.has(Discord.MessageFlags[flag])

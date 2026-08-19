@@ -1,3 +1,6 @@
+// reads a modal submission into fields keyed by component id, applying each row's type conversion,
+// func, and validation. returns [retryModal, errors, required], where retryModal only contains the
+// rows that failed
 registerFunction(scriptName, async (interaction, modal, fields) => {
   const errorFields = []
   const modal2 = {
