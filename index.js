@@ -1,25 +1,42 @@
-import { pathToFileURL } from "url"
+import { stringSimilarity } from "string-similarity-js"
+import escapeStringRegexp from "escape-string-regexp"
+import { createRequire } from "node:module"
+import Database from "better-sqlite3"
 import Discord from "discord.js"
 import path from "node:path"
+import vm from "node:vm"
 import fs from "node:fs"
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Global Imports - Imports you want to use globally
+
+const tokens = JSON.parse(fs.readFileSync("./private/tokens.json"))
+const config = JSON.parse(fs.readFileSync("./config.json"))
+
 //////////////////////////////////////////////////////////////////////////////////////
 
-const constants = {
-  Discord
+const scope = {
+  escapeStringRegexp,
+  stringSimilarity,
+  Discord,
+  tokens,
+  fs
 }
 
-for (const [k, v] of Object.entries(constants)) {
-  globalThis[k] = v
+//////////////////////////////////////////////////////////////////////////////////////
+
+config.save = () => {
+  fs.writeFileSync("config.json", JSON.stringify(config, null, 2))
+  return "Saved!"
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-// Functions
+globalThis.config = config
+globalThis.testMode = process.argv.includes("-dev")
+globalThis.database = new Database("database.db")
+globalThis.db = (await import("./database/db.js")).default
+
 //////////////////////////////////////////////////////////////////////////////////////
 
-const getFiles = async function*(dir) {
+globalThis.getFiles = async function*(dir) {
   const dirents = await fs.promises.readdir(dir, { withFileTypes: true })
   for (const dirent of dirents) {
     const res = path.resolve(dir, dirent.name)
@@ -31,28 +48,27 @@ const getFiles = async function*(dir) {
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-// Prototypes
-//////////////////////////////////////////////////////////////////////////////////////
-
-String.prototype.limit = function(l = 128, i) {
-  if (this.length <= l) return this
-  if (i) return "…" + this.slice(-(l - 1)).trim()
-  return this.slice(0, l - 1).trim() + "…"
-}
-String.prototype.quote = function(c, lang = "") {
-  if (c) return `\`\`\`${lang}
-${this.replaceAll("`", "´")}\`\`\``
-  return `\`${this.replaceAll("`", "´")}\``
-}
-Number.prototype.quote = function(c, lang = "") {
-  if (c) return `\`\`\`${lang}
-${this.toLocaleString()}\`\`\``
-  return `\`${this.toLocaleString()}\``
+const titleReplacements = {
+  "U R L": "URL",
+  "Id": "ID",
+  "I D": "ID"
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-// Client
+const titlePattern = new RegExp(`\\b(${Object.keys(titleReplacements).join("|")})\\b`, "gi")
+
+String.prototype.toTitleCase = function(c, n) {
+  let t
+  if (c) t = this.replace(/\s/g, "").replace(n ? /([A-Z])/g : /([A-Z0-9])/g, " $1").replace(/[_-]/g, " ")
+  else t = this
+  return t.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()).trim().replace(titlePattern, (a, b) => titleReplacements[b])
+}
+
+globalThis.limit = (str, length = 128) => {
+  if (typeof str != "string") str = String(str)
+  if (str.length <= length) return str.trim()
+  return str.slice(0, length - 1).trim() + "…"
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 
 globalThis.client = new Discord.Client({
@@ -60,13 +76,13 @@ globalThis.client = new Discord.Client({
   intents: [
     "Guilds",
     "GuildMembers",
-    "GuildBans",
+    // "GuildBans",
     "GuildEmojisAndStickers",
     // "GuildIntegrations",
     // "GuildWebhooks",
-    "GuildInvites",
-    "GuildVoiceStates",
-    "GuildPresences",
+    // "GuildInvites",
+    // "GuildVoiceStates",
+    // "GuildPresences",
     "GuildMessages",
     "GuildMessageReactions",
     // "GuildMessageTyping",
@@ -87,75 +103,208 @@ globalThis.client = new Discord.Client({
   ].map(e => Discord.Partials[e])
 })
 
-client.commands = new Discord.Collection
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Function Loading
 //////////////////////////////////////////////////////////////////////////////////////
 
-for await (const f of getFiles("./functions")) {
-  const func = (await import(pathToFileURL(f).href)).default
-  if (typeof func === "function") {
-    globalThis[path.basename(f, ".js")] = func
-  } else {
-    for (const [k, v] of Object.entries(func)) {
-      globalThis[k] = v
-    }
-  }
+client.colours = {
+  embed: config.colour,
+  error: "#DD2E44",
+  success: "#43B481"
 }
+client.stats = {}
+client.commandInstances = {}
+client.modPermissions = [
+  "ManageMessages",
+  "ModerateMembers",
+  "KickMembers",
+  "BanMembers"
+]
+client.cooldowns = {}
+
+Object.defineProperty(client, "totalUptime", {
+  get: () => durationString(process.uptime() * 1000)
+})
 
 //////////////////////////////////////////////////////////////////////////////////////
-// ArgType Loading
-//////////////////////////////////////////////////////////////////////////////////////
 
-globalThis.argTypes = {}
-
-for await (const f of getFiles("./argtypes")) {
-  argTypes[path.basename(f, ".js")] = (await import(pathToFileURL(f).href)).default
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Event Loading
-//////////////////////////////////////////////////////////////////////////////////////
-
-for await (const f of getFiles("./events")) {
-  const event = (await import(pathToFileURL(f).href)).default
-  const func = (...args) => {
-    if (client.isReady()) event(...args)
-  }
-  client.on(path.basename(f, ".js"), func)
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Command Loading
-//////////////////////////////////////////////////////////////////////////////////////
-
-for await (const f of getFiles("./commands")) {
-  const command = (await import(pathToFileURL(f).href)).default
-  const name = path.basename(f, ".js")
-  command.name = name
-  if (command.arguments) {
-    for (const argument of command.arguments) {
-      argument.type ??= "string"
-      argument.name ??= argument.type
-    }
-  }
-  if (client.commands.get(name)) {
-    throw new Error(`Command "${name}" already exists`)
-  }
-  client.commands.set(name, command)
-  if (command.aliases) {
-    for (const alias of command.aliases) {
-      if (client.commands.get(alias)) {
-        throw new Error(`Command "${alias}" already exists`)
+const vmContextObject = Object.assign({
+  console,
+  process,
+  Buffer,
+  reloadAll,
+  Uint8ClampedArray,
+  Uint8Array,
+  Int8Array,
+  Uint16Array,
+  Int16Array,
+  Uint32Array,
+  Int32Array,
+  Float32Array,
+  Float64Array,
+  BigUint64Array,
+  BigInt64Array,
+  require: createRequire(import.meta.url),
+  argTypes: {},
+  reloading: false,
+  toTitleCase: String.prototype.toTitleCase,
+  loadedFunctions: new Set,
+  loadedEvents: new Map,
+  loadedLoadIns: new Map,
+  registerFunction(name, func) {
+    if (typeof func === "function") {
+      vmContextObject[name] = func
+      globalThis[name] = func
+      vmContextObject.loadedFunctions.add(name)
+    } else {
+      for (const [k, v] of Object.entries(func)) {
+        vmContextObject[k] = v
+        globalThis[k] = v
+        vmContextObject.loadedFunctions.add(k)
       }
-      client.commands.set(alias, command)
     }
   }
+}, globalThis, scope)
+const vmContext = vm.createContext(vmContextObject)
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+const sourceCache = new Map()
+
+async function loadScript(filePath) {
+  const key = path.resolve(filePath).replace(/\\/g, "/")
+  await vm.runInContext(`(() => {
+    const __filename = "${key}"
+    const scriptName = "${path.basename(key, ".js")}"
+    const prefixPath = "${path.relative("./commands/prefix", path.dirname(key)).replace(/\\/g, "\\\\")}".split(/\\\\|\\\//)
+    const slashPath = "${path.relative("./commands/slash", path.dirname(key)).replace(/\\/g, "\\\\")}".split(/\\\\|\\\//).filter(Boolean)
+    return (async () => {
+      ${await (sourceCache.get(key) ?? fs.promises.readFile(key, "utf-8"))}
+    })()
+  })()`, vmContext, {
+    filename: key,
+    lineOffset: -6
+  })
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Login
+
+async function reloadAll() {
+  vmContextObject.reloading = true
+  try {
+    await loadAll()
+  } finally {
+    vmContextObject.reloading = false
+  }
+}
+
+async function loadAll() {
+  sourceCache.clear()
+  for (const dir of ["./functions", "./loadins", "./argtypes", "./commands", "./autocompletes", "./events"]) {
+    for await (const f of getFiles(dir)) {
+      if (!f.endsWith(".js")) continue
+      const key = path.resolve(f).replace(/\\/g, "/")
+      const source = fs.promises.readFile(key, "utf-8")
+      source.catch(() => {})
+      sourceCache.set(key, source)
+    }
+  }
+  vmContextObject.argTypes = {}
+  for (const [k, v] of vmContextObject.loadedEvents) client.off(k, v)
+  for (const [k, v] of vmContextObject.loadedLoadIns) await v.unload?.()
+  for (const script of vmContextObject.loadedFunctions) {
+    delete vmContextObject[script]
+    delete globalThis[script]
+  }
+  client.restrictedCommands = []
+  client.commandTree = {}
+  client.categories = {}
+  client.fullCommandList = []
+  client.stats.prefixCommandCount = 0
+  client.stats.slashCommandCount = 0
+  client.prefixCategories = new Set
+  client.prefixCommands = new Discord.Collection()
+  client.slashCommands = new Discord.Collection()
+  client.slashCommands.data = {}
+  client.contextCommands = new Discord.Collection()
+  client.autocompletes = new Discord.Collection()
+  vmContextObject.loadedFunctions = new Set
+  vmContextObject.loadedEvents = new Map
+  vmContextObject.loadedLoadIns = new Map
+  for await (const f of getFiles("./functions")) await loadScript(f)
+  for await (const f of getFiles("./loadins")) await loadScript(f)
+  await Promise.all(Array.from(vmContextObject.loadedLoadIns).map(e => e[1].loaded))
+  for await (const f of getFiles("./argtypes")) await loadScript(f)
+  for await (const f of getFiles("./commands/prefix")) if (f.endsWith(".js")) await loadScript(f)
+  for (const file of fs.readdirSync("./commands/slash/")) if (!file.endsWith(".js")) {
+    const commandGroup = new Discord.Collection()
+    if (fs.existsSync(`./commands/slash/${file}/command.json`)) {
+      commandGroup.data = JSON.parse(fs.readFileSync(`./commands/slash/${file}/command.json`))
+    } else {
+      commandGroup.data = {}
+    }
+    for (const subFile of fs.readdirSync(`./commands/slash/${file}`)) if (!subFile.endsWith(".js") && !subFile.endsWith(".json")) {
+      const subCommandGroup = new Discord.Collection()
+      if (fs.existsSync(`./commands/slash/${file}/${subFile}/command.json`)) {
+        subCommandGroup.data = JSON.parse(fs.readFileSync(`./commands/slash/${file}/${subFile}/command.json`))
+      } else {
+        subCommandGroup.data = {}
+      }
+      subCommandGroup.data.installType ??= commandGroup.data.installType
+      commandGroup.set(subFile, subCommandGroup)
+    }
+    client.slashCommands.set(file, commandGroup)
+  }
+  for await (const f of getFiles("./commands/slash")) if (f.endsWith(".js")) await loadScript(f)
+  for await (const f of getFiles("./commands/context")) await loadScript(f)
+  for await (const f of getFiles("./autocompletes")) await loadScript(f)
+  for await (const f of getFiles("./events")) await loadScript(f)
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 
-client.login(process.env.TOKEN)
+const handleError = async error => {
+  if (!error || typeof error !== "object") error = new Error(String(error))
+  if (testMode) {
+    return console.error(error)
+  }
+  if (error.message === "Service Unavailable") return
+  if (typeof vmContextObject.sendMessage !== "function") return
+  if (error.errors) {
+    console.error(error)
+  }
+  try {
+    if (error instanceof Discord.DiscordAPIError) {
+      if (error.message === "Unknown interaction") return
+      await sendMessage(await getChannel(config.channels.errors), {
+        title: "An API error occurred",
+        description: limit(`\`${error.message}\`\n\n**Code**\n\`${error.code}\`\n\n**Status**\n\`${error.status}\`\n\n**Request**\n\`${error.method?.toUpperCase()} ${error.url}\`\n\n${error.requestBody?.json ? `**Data**\n\`\`\`${JSON.stringify(error.requestBody.json)}\`\`\`\n\n` : ""}${error.origin ? `**Origin**\n\`\`\`${error.origin}\`\`\`\n\n` : ""}**Stack**\n\`\`\`${error.stack}`, 4093) + "```"
+      })
+    } else {
+      await sendMessage(await getChannel(config.channels.errors), {
+        title: "An error occurred",
+        description: limit(`\`${error.message}\`\n\n**Stack**\n\`\`\`${error.stack}`, 4093) + "```"
+      })
+    }
+  } catch (err) {
+    console.error(`Error at`, new Date())
+    console.error(err)
+    console.error(error.message)
+    console.error(error.stack)
+  }
+}
+process.on("unhandledRejection", handleError)
+process.on("uncaughtException", async error => {
+  await handleError(error).catch(() => {})
+  process.exit(1)
+})
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+client.once("clientReady", async () => {
+  console.log(`${client.user.displayName} online`)
+  await reloadAll()
+  client.emit("clientReady")
+})
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+client.login(tokens.discord)

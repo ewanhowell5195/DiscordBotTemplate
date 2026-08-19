@@ -1,4 +1,6 @@
-.env
+node_modules/
+private/
+database.db*
+restart.json
 *.sublime-project
 *.sublime-workspace
-/node_modules

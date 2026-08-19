@@ -1,0 +1,10 @@
+{
+  "prefix": "!",
+  "colour": "#5865F2",
+  "owners": [
+    "YOUR_USER_ID"
+  ],
+  "channels": {
+    "errors": ""
+  }
+}

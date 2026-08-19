@@ -1,12 +1,15 @@
-export default args => {
+registerFunction(scriptName, (message, data) => {
   const embed = new Discord.EmbedBuilder()
-  if (args.title) embed.setTitle(args.title)
-  if (args.description) embed.setDescription(args.description)
-  if (args.author) embed.setAuthor(args.author)
-  if (args.footer) embed.setFooter(args.footer)
-  if (args.thumbnail) embed.setThumbnail(args.thumbnail)
-  if (args.image) embed.setImage(args.image)
-  if (args.timestamp) embed.setTimestamp(args.timestamp)
-  embed.setColor(args.color ?? "#FFFFFF")
+  if (data.title) embed.setTitle(data.title)
+  if (data.url) embed.setURL(data.url)
+  if (data.description) embed.setDescription(data.description)
+  if (data.author?.[0]) embed.setAuthor({name: data.author[0], iconURL: data.author[1], url: data.author[2]})
+  if (data.footer?.[0]) embed.setFooter({text: data.footer[0], iconURL: data.footer[1]})
+  if (data.thumbnail) embed.setThumbnail(data.thumbnail)
+  if (data.image) embed.setImage(data.image)
+  if (data.timestamp) embed.setTimestamp(data.timestamp)
+  if (data.field) embed.addFields({ name: data.field[0], value: data.field[1], inline: data.field[2] })
+  if (data.fields) embed.addFields(data.fields.map(e => ({ name: e[0], value: e[1], inline: e[2] })))
+  embed.setColor(typeof data.colour === "number" ? data.colour : data.colour?.toString() ?? client.colours.embed)
   return embed
-}
+})

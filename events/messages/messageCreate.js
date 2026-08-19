@@ -1,34 +1,25 @@
-const prefixes = ["!", "?"]
-
-export default async message => {
-  if (message.author.bot || !message.content) return
-  if (message.content === `<@${client.user.id}>` || message.content === `<@!${client.user.id}>`) {
-    return sendMessage(message, {
-      title: client.user.displayName,
-      thumbnail: avatar(client.user),
-      description: `My prefix is \`${prefix}\``
-    })
-  }
+registerEvent(scriptName, async message => {
+  if (message.author.bot || message.system) return
+  if (message.content === `<@${client.user.id}>` || message.content === `<@!${client.user.id}>`) return sendMessage(message, {
+    title: client.user.displayName,
+    thumbnail: avatar(client.user),
+    description: `My prefix is \`${config.prefix}\`\n\nUse \`${config.prefix}help\` to view the commands that are available\n\nI also support slash commands!`
+  })
   let messageList = message.content.split(/(?<! ) /)
   if ([`<@${client.user.id}>`, `<@!${client.user.id}>`].includes(messageList[0])) {
-    messageList[0] = prefix + (messageList[1] ?? "")
+    messageList[0] = config.prefix + (messageList[1] ?? "")
     messageList.splice(1, 1)
   }
+  let command
   const start = messageList[0].toLowerCase()
-  for (const prefix of prefixes) {
-    if (start.startsWith(prefix)) {
-      const command = start.slice(prefix.length)
-      if (command === "") return
-      const cmd = client.commands.get(command)
-      if (!cmd) {
-        return sendError(message, {
-          title: "Command not found",
-          description: `The command ${command.limit().quote()} was not found`
-        })
-      }
-      message.aliasUsed = command
-      runCommand(cmd, message, messageList.slice(1))
-      break
-    }
-  }
-}
+  if (start.startsWith(config.prefix)) command = start.slice(config.prefix.length).toLowerCase()
+  if (!command) return
+  let cmd = client.prefixCommands.get(command)
+  if (!cmd) {
+    const closest = await wrongCommand(command, message).catch(() => {})
+    if (!closest) return
+    cmd = closest[0]
+    message.aliasUsed = closest[1]
+  } else message.aliasUsed = command
+  runPrefixCommand(cmd, message, messageList.slice(1))
+})

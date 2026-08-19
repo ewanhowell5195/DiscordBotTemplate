@@ -1,9 +1,9 @@
-export default {
+registerFunction(scriptName, {
   isType: {
     channel(channel, type) {
       channel = channel?.type ?? channel
-      if (type === "Thread") return channel === Discord.ChannelType.PublicThread || channel === Discord.ChannelType.PrivateThread
-      if (type === "Voice") return channel === Discord.ChannelType.GuildVoice || channel === Discord.ChannelType.GuildStageVoice
+      if (type === "Thread") return (channel === Discord.ChannelType.PublicThread) || (channel === Discord.ChannelType.PrivateThread)
+      if (type === "Voice") return (channel === Discord.ChannelType.GuildVoice) || (channel === Discord.ChannelType.GuildStageVoice)
       return channel === Discord.ChannelType[type]
     },
     interaction: (interaction, type) => (interaction?.type ?? interaction) === Discord.InteractionType[type],
@@ -22,7 +22,6 @@ export default {
     commandPermission: permission => Discord.ApplicationCommandPermissionType[permission?.type ?? permission],
     ruleEvent: event => Discord.AutoModerationRuleEventType[event],
     ruleTrigger: trigger => Discord.AutoModerationRuleTriggerType[trigger],
-    action: action => Discord.AutoModerationActionType[action],
-    threadDuration: duration => Discord.ThreadAutoArchiveDuration[duration]
+    action: action => Discord.AutoModerationActionType[action]
   }
-}
+})
