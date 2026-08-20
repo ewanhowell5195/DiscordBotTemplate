@@ -16,12 +16,12 @@ registerArgType(scriptName, async (item, data, args) => {
         return url
       }
       if (!data?.errorless) return sendError(data.message, {
-        title: "Unable to get URL",
+        title: "Failed to get URL",
         description: `The URL returned an error code: \`${r.status}\``
       })
     } catch {
       if (!data?.errorless) return sendError(data.message, {
-        title: "Unable to get URL",
+        title: "Failed to get URL",
         description: "The URL did not respond"
       })
     }
